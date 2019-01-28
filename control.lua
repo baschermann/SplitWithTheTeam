@@ -71,6 +71,15 @@ end
 
 function on_gui_click(event)
 	local player = game.players[event.player_index]
+	
+	if(event.element.name == "open_split_team_view") then
+		if(player.gui.center.container == nil) then
+			create_gui(player)
+		else
+			player.gui.center.container.destroy()
+		end
+	end
+	
 	if(player.force.name ~= "player") then
 		if(global.recipes[event.element.name] ~= nil) then
 			global.recipes[event.element.name] = player.force.name
@@ -83,12 +92,6 @@ function on_gui_click(event)
 		elseif(event.element.name == "button_join_Team2") then
 			player.force = game.forces["Team2"]
 			update_gui(player)
-		elseif(event.element.name == "open_split_team_view") then
-			if(player.gui.center.container == nil) then
-				create_gui(player)
-			else
-				player.gui.center.container.destroy()
-			end
 		end
 	end
 end
@@ -112,10 +115,19 @@ function prepareTeam(team)
   team.enable_all_technologies()
 end
 
-TeamNames = {};
+function on_player_join(event)
+	local player = game.players[event.player_index]
+	
+	--for key, value in pairs(game.item_prototypes) do
+	--	if(string.find(key, "%-ore") ~= nil) then
+	--		player.print(key)
+	--	end
+	--end
+end
 
 function on_init() 
 
+	TeamNames = {};
 	TeamNames[0] = "Team1"
 	TeamNames[1] = "Team2"
 
@@ -127,13 +139,29 @@ function on_init()
 	prepareTeam(game.forces[TeamNames[0]])
 	prepareTeam(game.forces[TeamNames[1]])
 	
-	global.recipes = {};
+	global.recipes = {}
+	global.recipes["iron-ore"] 		= "none"
+	global.recipes["copper-ore"] 	= "none"
+	global.recipes["coal"] 			= "none"
+	global.recipes["stone"] 		= "none"
+	global.recipes["uranium-ore"] 	= "none"
+	global.recipes["water"] 		= "none"
 	
-	for key, value in pairs(game.forces.player.recipes) do
-		if(value.hidden == false) then
+	for key, value in pairs(game.item_prototypes) do
+		if(string.find(key, "%-ore") ~= nil) then
 			global.recipes[key] = "none"
 		end
 	end
+	
+	--for key, value in pairs(game.fluid_prototypes) do
+	--	global.recipes[key] = "none"
+	--end
+	
+	--for key, value in pairs(game.forces.player.recipes) do
+	--	if(value.hidden == false) then
+	--		global.recipes[key] = "none"
+	--	end
+	--end
 end
 
 --function on_player_create(player_index)
@@ -141,6 +169,6 @@ end
 --end
 
 script.on_init( on_init )
---script.on_event(defines.events.on_player_joined_game, on_player_join )
+script.on_event(defines.events.on_player_joined_game, on_player_join )
 script.on_event(defines.events.on_gui_click, on_gui_click )
 script.on_event(defines.events.on_player_created, on_player_create)
