@@ -20,7 +20,18 @@ function create_gui_list(element, recipes, caption, is_button, filter_name, play
 	outer.style.height = 600
 	outer.style.width = width
 	
-	outer.add{ type="label", name="label", caption=caption}
+	local tableteam = outer.add{ type="table", name="tableteam"..caption, direction="horizontal", column_count=2}
+	
+	if(player.force.name == filter_name) then
+		tableteam.add{ type="label", name="label", caption=caption .. " (your team)"}
+	else
+		tableteam.add{ type="label", name="label", caption=caption}
+	end
+	
+	if(filter_name ~= "none" and player.force.name == "player") then
+		tableteam.add{ type="button", name="button_join_"..filter_name, caption="Join"}
+	end
+	
 	local scrollpane = outer.add{ type="scroll-pane", name="scrollpane"..caption, vertical_scroll_policy="always"}
 	local inner = scrollpane.add{ type="table", name="table"..caption.."4", direction="vertical", column_count=5 }
 	
@@ -71,12 +82,25 @@ end
 function on_gui_click(event)
 	local player = game.players[event.player_index]
 	if(player.force.name ~= "player") then
-		global.recipes[event.element.name] = player.force.name
-		for k, v in pairs(game.players) do
-			create_gui(v)
+		if(global.recipes[event.element.name] ~= nil) then
+			global.recipes[event.element.name] = player.force.name
+			update_gui_for_all()
 		end
 	else
-		player.print("Join a Team first!")
+		if(event.element.name == "button_join_Team1") then
+			player.force = game.forces["Team1"]
+			update_gui_for_all()
+		elseif(event.element.name == "button_join_Team2") then
+			player.force = game.forces["Team2"]
+			update_gui_for_all()
+		end
+	end
+end
+
+function update_gui_for_all()
+	
+	for k, v in pairs(game.players) do
+		create_gui(v)
 	end
 end
 
