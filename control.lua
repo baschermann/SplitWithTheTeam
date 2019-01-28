@@ -80,20 +80,35 @@ function on_gui_click(event)
 	end
 end
 
+function prepareTeam(team)
+  team.disable_all_prototypes()
+  team.enable_all_technologies()
+end
+
+TeamNames = {};
+
 function on_init() 
+
+  TeamNames[0] = "Team1"
+  TeamNames[1] = "Team2"
+
 	game.create_force("Team1")
-	game.create_force("Team2")
-    game.forces['Team1'].set_cease_fire('Team2', true)
-    game.forces['Team2'].set_cease_fire('Team1', true)
+  game.create_force("Team2")
+
+  game.forces['Team1'].set_cease_fire('Team2', true)
+  game.forces['Team2'].set_cease_fire('Team1', true)
+  prepareTeam(game.forces[TeamNames[0]])
+  prepareTeam(game.forces[TeamNames[1]])
 	
 	global.recipes = {};
 	global.first_join = true;
 end
 
+--function on_player_create(player_index)
+--  game.players[player_index.player_index].force = game.forces[TeamNames[0]]
+--end
 
 script.on_init( on_init )
 script.on_event(defines.events.on_player_joined_game, on_player_join )
 script.on_event(defines.events.on_gui_click, on_gui_click )
-
-
---hello my friend
+--script.on_event(defines.events.on_player_created, on_player_create)
