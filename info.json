@@ -1,0 +1,10 @@
+{
+  "name": "split_with_the_team",
+  "version": "1.0.0",
+  "title": "Split With The Team",
+  "author": "Dukrah",
+  "description": "2 Teams that need to work together. Items are split up and can only be produced by one team and has to transferred to the other.",
+  "homepage": "https://github.com/Dukrah/Indestructible-Energy-Poles",
+  "factorio_version": "0.16",
+  "dependencies": ["base"]
+}
