@@ -79,10 +79,10 @@ function on_gui_click(event)
 	else
 		if(event.element.name == "button_join_Team1") then
 			player.force = game.forces["Team1"]
-			update_gui_for_all()
+			update_gui(player)
 		elseif(event.element.name == "button_join_Team2") then
 			player.force = game.forces["Team2"]
-			update_gui_for_all()
+			update_gui(player)
 		elseif(event.element.name == "open_split_team_view") then
 			if(player.gui.center.container == nil) then
 				create_gui(player)
@@ -95,9 +95,15 @@ end
 
 function update_gui_for_all()
 	for k, v in pairs(game.players) do
-		if(player.gui.center.container ~= nil) then
+		if(v.gui.center.container ~= nil) then
 			create_gui(v)
 		end
+	end
+end
+
+function update_gui(player)
+	if(player.gui.center.container ~= nil) then
+		create_gui(player)
 	end
 end
 
@@ -124,7 +130,7 @@ function on_init()
 	global.recipes = {};
 	
 	for key, value in pairs(game.forces.player.recipes) do
-		if(value.enabled and value.hidden == false) then
+		if(value.hidden == false) then
 			global.recipes[key] = "none"
 		end
 	end
