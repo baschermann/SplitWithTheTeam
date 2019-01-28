@@ -81,8 +81,8 @@ function on_gui_click(event)
 	end
 	
 	if(player.force.name ~= "player") then
-		if(global.recipes[event.element.name] ~= nil) then
-			global.recipes[event.element.name] = player.force.name
+		if(global.recipes[event.element.name] ~= nil and global.recipes[event.element.name] == "none") then
+			assign_technologies(event.element.name, player)
 			update_gui_for_all()
 		end
 	else
@@ -110,6 +110,29 @@ function update_gui(player)
 	end
 end
 
+function assign_technologies(name, player)
+	global.recipes[name] = player.force.name
+	if(player.force.recipes[name] ~= nil) then
+		player.force.recipes[name].enabled = true
+	end
+
+	local other_force_name = nil;
+	if(team_names[0] == player.force.name) then other_force_name = team_names[1] else other_force_name = team_names[0] end
+	local other_force = game.forces[other_force_name]
+
+	if(name == "iron-ore") then
+		global.recipes["iron-plate"] = other_force_name
+		global.recipes["copper-ore"] = other_force_name
+		global.recipes["copper-plate"] = player.force.name
+		player.force.recipes["copper-plate"].enabled = true
+	elseif(name == "copper-ore") then
+		global.recipes["copper-plate"] = other_force_name
+		global.recipes["iron-ore"] = other_force_name
+		global.recipes["iron-plate"] = player.force.name
+		player.force.recipes["iron-plate"].enabled = true
+	end
+end
+
 function prepareTeam(team)
   team.disable_all_prototypes()
   team.enable_all_technologies()
@@ -125,19 +148,21 @@ function on_player_join(event)
 	--end
 end
 
+team_names = {};
+
 function on_init() 
 
-	TeamNames = {};
-	TeamNames[0] = "Team1"
-	TeamNames[1] = "Team2"
+
+	team_names[0] = "Team1"
+	team_names[1] = "Team2"
 
 	game.create_force("Team1")
 	game.create_force("Team2")
 
 	game.forces['Team1'].set_cease_fire('Team2', true)
 	game.forces['Team2'].set_cease_fire('Team1', true)
-	prepareTeam(game.forces[TeamNames[0]])
-	prepareTeam(game.forces[TeamNames[1]])
+	prepareTeam(game.forces[team_names[0]])
+	prepareTeam(game.forces[team_names[1]])
 	
 	global.recipes = {}
 	global.recipes["iron-ore"] 		= "none"
@@ -147,11 +172,11 @@ function on_init()
 	global.recipes["uranium-ore"] 	= "none"
 	global.recipes["water"] 		= "none"
 	
-	for key, value in pairs(game.item_prototypes) do
-		if(string.find(key, "%-ore") ~= nil) then
-			global.recipes[key] = "none"
-		end
-	end
+	--for key, value in pairs(game.item_prototypes) do
+	--	if(string.find(key, "%-ore") ~= nil) then
+	--		global.recipes[key] = "none"
+	--	end
+	--end
 	
 	--for key, value in pairs(game.fluid_prototypes) do
 	--	global.recipes[key] = "none"
