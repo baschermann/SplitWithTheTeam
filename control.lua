@@ -94,3 +94,6 @@ end
 script.on_init( on_init )
 script.on_event(defines.events.on_player_joined_game, on_player_join )
 script.on_event(defines.events.on_gui_click, on_gui_click )
+
+
+--hello my friend
