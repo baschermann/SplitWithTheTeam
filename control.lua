@@ -5,9 +5,9 @@ function create_gui(player)
 	player.gui.center.add{ type="frame", name="container",	direction="horizontal" }
 	player.gui.center.container.add{ type="table", name="table", direction="horizontal", column_count=3, draw_vertical_lines = true }
 	
-	create_gui_list(player.gui.center.container.table, global.recipes, "Team 1", false, "Team1", player, 200);
-	create_gui_list(player.gui.center.container.table, global.recipes, "Assign", true, "none", player, 250);
-	create_gui_list(player.gui.center.container.table, global.recipes, "Team 2", false, "Team2", player, 200);
+	create_gui_list(player.gui.center.container.table, global.recipes, "Team 1", false, "Team1", player, 220);
+	create_gui_list(player.gui.center.container.table, global.recipes, "Assign", true, "none", player, 245);
+	create_gui_list(player.gui.center.container.table, global.recipes, "Team 2", false, "Team2", player, 220);
 end
 
 function create_gui_list(element, recipes, caption, is_button, filter_name, player, width)
@@ -64,19 +64,9 @@ function get_sprite_path(name, player)
 	return nil
 end
 
-function on_player_join(event)
-	local player = game.players[event.player_index];
-	
-	if(global.first_join) then
-		for key, value in pairs(player.force.recipes) do
-			if(value.enabled and value.hidden == false) then
-				global.recipes[key] = "none"
-			end
-		end
-		
-		global.first_join = false;
-	end
-	create_gui(player)
+function on_player_create(event)
+	local player = game.players[event.player_index]
+	local button = player.gui.top.add{ type="button", name="open_split_team_view", caption="ST"}
 end
 
 function on_gui_click(event)
@@ -93,14 +83,21 @@ function on_gui_click(event)
 		elseif(event.element.name == "button_join_Team2") then
 			player.force = game.forces["Team2"]
 			update_gui_for_all()
+		elseif(event.element.name == "open_split_team_view") then
+			if(player.gui.center.container == nil) then
+				create_gui(player)
+			else
+				player.gui.center.container.destroy()
+			end
 		end
 	end
 end
 
 function update_gui_for_all()
-	
 	for k, v in pairs(game.players) do
-		create_gui(v)
+		if(player.gui.center.container ~= nil) then
+			create_gui(v)
+		end
 	end
 end
 
@@ -113,19 +110,24 @@ TeamNames = {};
 
 function on_init() 
 
-  TeamNames[0] = "Team1"
-  TeamNames[1] = "Team2"
+	TeamNames[0] = "Team1"
+	TeamNames[1] = "Team2"
 
 	game.create_force("Team1")
-  game.create_force("Team2")
+	game.create_force("Team2")
 
-  game.forces['Team1'].set_cease_fire('Team2', true)
-  game.forces['Team2'].set_cease_fire('Team1', true)
-  prepareTeam(game.forces[TeamNames[0]])
-  prepareTeam(game.forces[TeamNames[1]])
+	game.forces['Team1'].set_cease_fire('Team2', true)
+	game.forces['Team2'].set_cease_fire('Team1', true)
+	prepareTeam(game.forces[TeamNames[0]])
+	prepareTeam(game.forces[TeamNames[1]])
 	
 	global.recipes = {};
-	global.first_join = true;
+	
+	for key, value in pairs(game.forces.player.recipes) do
+		if(value.enabled and value.hidden == false) then
+			global.recipes[key] = "none"
+		end
+	end
 end
 
 --function on_player_create(player_index)
@@ -133,6 +135,6 @@ end
 --end
 
 script.on_init( on_init )
-script.on_event(defines.events.on_player_joined_game, on_player_join )
+--script.on_event(defines.events.on_player_joined_game, on_player_join )
 script.on_event(defines.events.on_gui_click, on_gui_click )
---script.on_event(defines.events.on_player_created, on_player_create)
+script.on_event(defines.events.on_player_created, on_player_create)
