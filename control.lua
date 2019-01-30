@@ -44,7 +44,6 @@ function create_gui_list(element, recipes, caption, is_button, filter_name, play
 						inner.add{ type="sprite-button", name=key, sprite=path}
 					end
 				else
-					--inner.add{ type="sprite-button", name=key, sprite=path, ignored_by_interaction = true, style = "red-background-image-style"}
 					local button = inner.add{ type="sprite-button", name=key, sprite=path, ignored_by_interaction = true}
 					if(global.researched_recipes[filter_name][key] == nil) then
 						button.style = "red-background-image-style"
@@ -70,29 +69,29 @@ function get_sprite_path(name, player)
 		return "recipe/"..name
 	end
 	
-	player.print(name)
+	player.print("Could not draw: "..name)
 	return nil
 end
 
 function on_player_create(event)
 	local player = game.players[event.player_index]
 	local button = player.gui.top.add{ type="button", name="open_split_team_view", caption="ST"}
+	toggle_gui(player)
 
-	-- for testing
+	--for testing
 	local button = player.gui.top.add{ type="button", name="join1", caption="Join T1"}
 	local button = player.gui.top.add{ type="button", name="join2", caption="Join T2"}
 
-	--player.insert{name="lab", count=50}
-	--player.insert{name="boiler", count=3}
-	--player.insert{name="offshore-pump", count=1}
-	--player.insert{name="steam-engine", count=6}
-	--player.insert{name="science-pack-1", count=600}
-	--player.insert{name="science-pack-2", count=600}
-	--player.insert{name="medium-electric-pole", count=50}
-	--player.insert{name="solid-fuel", count=150}
-
-
-	-- end testing
+	player.insert{name="lab", count=50}
+	player.insert{name="boiler", count=3}
+	player.insert{name="offshore-pump", count=1}
+	player.insert{name="steam-engine", count=6}
+	player.insert{name="science-pack-1", count=600}
+	player.insert{name="science-pack-2", count=600}
+	player.insert{name="medium-electric-pole", count=50}
+	player.insert{name="solid-fuel", count=150}
+	player.insert{name="assembling-machine-3", count=50}
+	--end testing
 end
 
 function on_gui_click(event)
@@ -108,14 +107,14 @@ function on_gui_click(event)
 		player.force = game.forces[global.team_names[2]]
 		player.print("Joined T2")
 	end
+
+	if(event.element.name == "research_now") then
+		
+	end
 	-- end Testing
 	
 	if(event.element.name == "open_split_team_view") then
-		if(player.gui.center.container == nil) then
-			create_gui(player)
-		else
-			player.gui.center.container.destroy()
-		end
+		toggle_gui(player)
 	end
 	
 	if(player.force.name ~= "player") then
@@ -131,6 +130,14 @@ function on_gui_click(event)
 			join_team(player, global.team_names[2])
 			update_gui(player)
 		end
+	end
+end
+
+function toggle_gui(player)
+	if(player.gui.center.container == nil) then
+		create_gui(player)
+	else
+		player.gui.center.container.destroy()
 	end
 end
 
@@ -195,13 +202,14 @@ function assign_technologies(name, player)
 		if(value == "none") then free_technologies = free_technologies + 1 end
 	end
 
-	if(free_technologies <= 0) then assign_techs(player.force, other_force, global.start_techs, true) end
+
+	if(free_technologies <= 0) then assign_techs(player.force, other_force, global.start_techs, true, 0, player.force) end
 end
 
-function assign_techs(force1, force2, recipes_to_assing, enable)
+function assign_techs(force1, force2, recipes_to_assign, enable, number_of_repeats, force_of_researcher)
 
 	-- Add technologies that have not been set manually that are usually available from the start
-	for key, value in pairs(recipes_to_assing) do
+	for key, value in pairs(recipes_to_assign) do
 		if(global.recipes[value] == nil) then
 			global.recipes[value] = "none"
 		end
@@ -210,81 +218,111 @@ function assign_techs(force1, force2, recipes_to_assing, enable)
 	-- assign them automatically
 	local repeat_assigning = false;
 	local repeat_techs = {}
+	
+	for _, item_name in pairs(recipes_to_assign) do
+		--game.players[1].print(_..": "..item_name)
+		-- item_name is the tech we want to assign
+		-- the force who can craft less ingredients gets the recipe
+		local f1_nr_of_ingr = 0
+		local f2_nr_of_ingr = 0
 
-	for item_name, item_owner in pairs(global.recipes) do
-		if(item_owner == "none") then
-			-- item_name is the tech we want to assign
-			-- the force who can craft less ingredients gets the recipe
-			local f1_nr_of_ingr = 0
-			local f2_nr_of_ingr = 0
+		local all_ingredients_available = true;
+		for _, ingredient in pairs(game.recipe_prototypes[item_name].ingredients) do
+			--game.players[1].print("Ingredient: "..ingredient.name)
+			local ingredient_available = false;
 
-			local all_ingredients_available = true;
-			for _, ingredient in pairs(game.recipe_prototypes[item_name].ingredients) do
-				local ingredient_available = false;
-
-				if(global.recipes[ingredient.name] == global.team_names[1]) then
-					f1_nr_of_ingr = f1_nr_of_ingr + 1
-					ingredient_available = true
-				end
-
-				if(global.recipes[ingredient.name] == global.team_names[2]) then
-					f2_nr_of_ingr = f2_nr_of_ingr + 1
-					ingredient_available = true
-				end
-
-				if(global.recipes[ingredient.name] == "all") then
-					f1_nr_of_ingr = f1_nr_of_ingr + 1
-					f2_nr_of_ingr = f2_nr_of_ingr + 1
-					ingredient_available = true
-				end
-
-				if(ingredient_available == false) then
-					all_ingredients_available = false;
-				end
+			if(global.recipes[ingredient.name] == global.team_names[1]) then
+				f1_nr_of_ingr = f1_nr_of_ingr + 1
+				ingredient_available = true
 			end
 
-			if(all_ingredients_available) then
-				if(f1_nr_of_ingr == f2_nr_of_ingr) then
-					-- if both have the same number of ingredients
-					-- the force with less recipes gets it
-					local f1_nr_of_rec = 0
-					local f2_nr_of_rec = 0
-					for key, value in pairs(global.recipes) do
-						if(value == global.team_names[1]) then
-							f1_nr_of_rec = f1_nr_of_rec + 1
-						end
+			if(global.recipes[ingredient.name] == global.team_names[2]) then
+				f2_nr_of_ingr = f2_nr_of_ingr + 1
+				ingredient_available = true
+			end
 
-						if(value == global.team_names[2]) then
-							f2_nr_of_rec = f2_nr_of_rec + 1
-						end
-					end
+			if(global.recipes[ingredient.name] == "all") then
+				f1_nr_of_ingr = f1_nr_of_ingr + 1
+				f2_nr_of_ingr = f2_nr_of_ingr + 1
+				ingredient_available = true
+			end
 
-					if(f1_nr_of_rec >= f2_nr_of_rec) then
-						--game.players[1].print("Nr. of recipes:: "..tostring(f1_nr_of_rec).." (T1) to "..tostring(f2_nr_of_rec).." (T2) for "..item_name.." giving Team 2")
-						add_to(force2, item_name, enable)
-					else
-						--game.players[1].print("Nr. of recipes:: "..tostring(f1_nr_of_rec).." (T1) to "..tostring(f2_nr_of_rec).." (T2) for "..item_name.." giving Team 2")
-						add_to(force1, item_name, enable)
-					end
-				elseif(f1_nr_of_ingr > f2_nr_of_ingr) then
-					-- if team 1 has more ingredients for this recipe, give it to team 2
-					--game.players[1].print("Nr. of ingredients:: "..tostring(f1_nr_of_ingr).." (T1) to "..tostring(f2_nr_of_ingr).." (T2) for "..item_name.." giving Team 2")
-					add_to(force2, item_name, enable)
+			if(ingredient_available == false) then
+				if(number_of_repeats < 7) then
+					all_ingredients_available = false
 				else
-					--game.players[1].print("Nr. of ingredients:: "..tostring(f1_nr_of_ingr).." (T1) to "..tostring(f2_nr_of_ingr).." (T2) for "..item_name.." giving Team 1")
+					all_ingredients_available = true
+				end
+			end
+		end
+
+		local products = {}
+		if(game.recipe_prototypes[item_name] ~= nil) then
+			for key, value in pairs(game.recipe_prototypes[item_name].products) do
+				--game.players[1].print(value.name)
+				global.researched_recipes[force_of_researcher.name][value.name] = true
+				table.insert(products, value.name)
+			end
+		end
+
+		if(all_ingredients_available) then
+			if(f1_nr_of_ingr == f2_nr_of_ingr) then
+				-- if both have the same number of ingredients
+				-- the force with less recipes gets it
+				local f1_nr_of_rec = 0
+				local f2_nr_of_rec = 0
+				for key, value in pairs(global.recipes) do
+					if(value == global.team_names[1]) then
+						f1_nr_of_rec = f1_nr_of_rec + 1
+					end
+
+					if(value == global.team_names[2]) then
+						f2_nr_of_rec = f2_nr_of_rec + 1
+					end
+				end
+
+				if(f1_nr_of_rec >= f2_nr_of_rec) then
+					--game.players[1].print("Nr. of recipes:: "..tostring(f1_nr_of_rec).." (T1) to "..tostring(f2_nr_of_rec).." (T2) for "..item_name.." giving Team 2")
+					add_to(force2, item_name, enable)
+					add_products_to(force2, products)
+				else
+					--game.players[1].print("Nr. of recipes:: "..tostring(f1_nr_of_rec).." (T1) to "..tostring(f2_nr_of_rec).." (T2) for "..item_name.." giving Team 2")
 					add_to(force1, item_name, enable)
+					for key, value in pairs(products) do
+						add_to(force1, value, enable)
+						add_products_to(force1, products)
+					end
+				end
+			elseif(f1_nr_of_ingr > f2_nr_of_ingr) then
+				-- if team 1 has more ingredients for this recipe, give it to team 2
+				--game.players[1].print("Nr. of ingredients:: "..tostring(f1_nr_of_ingr).." (T1) to "..tostring(f2_nr_of_ingr).." (T2) for "..item_name.." giving Team 2")
+				add_to(force2, item_name, enable)
+				for key, value in pairs(products) do
+					add_to(force2, value, enable)
+					add_products_to(force2, products)
 				end
 			else
-				repeat_assigning = true;
-				table.insert(repeat_techs, item_name)
-				--game.players[1].print("not all ingredients available for "..item_name)
+				--game.players[1].print("Nr. of ingredients:: "..tostring(f1_nr_of_ingr).." (T1) to "..tostring(f2_nr_of_ingr).." (T2) for "..item_name.." giving Team 1")
+				add_to(force1, item_name, enable)
+				for key, value in pairs(products) do
+					add_to(force1, value, enable)
+					add_products_to(force1, products)
+				end
 			end
+		else
+			repeat_assigning = true;
+			table.insert(repeat_techs, item_name)
+			--game.players[1].print("not all ingredients available for "..item_name)
 		end
 	end
 	
-	if(repeat_assigning) then
-		--game.players[1].print("repeat")
-		assign_techs(force1, force2, repeat_techs, enable)
+	if(number_of_repeats < 7) then
+		if(repeat_assigning) then
+			--game.players[1].print("--- repeat")
+			assign_techs(force1, force2, repeat_techs, enable, number_of_repeats + 1, force_of_researcher)
+		end
+	else
+		--game.players[1].print("Repeats reached maximum limit")
 	end
 end
 
@@ -293,20 +331,31 @@ function add_to(force, name, enable)
 	if(enable) then	force.recipes[name].enabled = true end
 end
 
+function add_products_to(force, products, researcher_force)
+	for key, value in pairs(products) do
+		if(global.recipes[value] == nil) then
+			global.recipes[value] = force.name
+		end
+	end
+end
+
 function on_research_finished(event)
 	local researched_items = {}
 
 	-- get all techs that are researched
 	for key, value in pairs(event.research.effects) do
 		if(value.type == "unlock-recipe") then
-			table.insert(researched_items, value.recipe)
-			local researched_recipes = global.researched_recipes[event.research.force.name]
-			researched_recipes[value.recipe] = true;
+			if(game.recipe_prototypes[value.recipe].subgroup.name == "fill-barrel" or game.recipe_prototypes[value.recipe].subgroup.name == "empty-barrel") then
+				global.recipes[value.recipe] = "all"
+			else
+				table.insert(researched_items, value.recipe)
+			end
+			global.researched_recipes[event.research.force.name][value.recipe] = true
 		end
 	end
 
 	-- assign them to the forces but do not enable them
-	assign_techs(game.forces[global.team_names[1]], game.forces[global.team_names[2]], researched_items, false)
+	assign_techs(game.forces[global.team_names[1]], game.forces[global.team_names[2]], researched_items, false, 0, event.research.force)
 
 	-- disable that are not our own since researching enables them automatically
 	for key, value in pairs(researched_items) do
@@ -314,7 +363,10 @@ function on_research_finished(event)
 			game.forces[event.research.force.name].recipes[value].enabled = false
 		end
 	end
+
+	update_gui_for_all()
 end
+
 function prepare_force(force)
 	force.disable_all_prototypes()
 	force.enable_all_technologies()
@@ -326,16 +378,19 @@ function prepare_force(force)
 	global.recipes["wood"] = "all"
 end
 
-function on_init() 
-	global.recipes = {}
-	global.researched_recipes = {}
-	
-	global.team_names = {}
-	global.start_techs = {}
+function on_research_started(event)
+	event.research.researched = true;
+end
 
+function on_init() 
+	global.team_names = {}
 	global.team_names[1] = "Team1"
 	global.team_names[2] = "Team2"
 
+	global.recipes = {}
+	global.start_techs = {}
+
+	global.researched_recipes = {}
 	global.researched_recipes[global.team_names[1]] = {}
 	global.researched_recipes[global.team_names[2]] = {}
 
@@ -351,6 +406,7 @@ function on_init()
 	global.recipes["iron-ore"] 		= "none"
 	global.recipes["stone"] 		= "none"
 	global.recipes["uranium-ore"] 	= "none"
+	global.recipes["crude-oil"] 	= "none"
 
 	for key, value in pairs(game.forces.player.recipes) do
 		if(value.enabled == true and value.hidden == false) then
@@ -361,10 +417,11 @@ function on_init()
 	end
 
 	-- disable everything for player force
-	--game.forces["player"].disable_all_prototypes();
+	game.forces["player"].disable_all_prototypes();
 end
 
 script.on_init( on_init )
 script.on_event( defines.events.on_gui_click, on_gui_click )
 script.on_event( defines.events.on_player_created, on_player_create )
 script.on_event( defines.events.on_research_finished, on_research_finished )
+script.on_event( defines.events.on_research_started, on_research_started )
