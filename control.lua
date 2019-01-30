@@ -320,6 +320,78 @@ function prepare_force(force)
 	global.recipes["wood"] = "all"
 end
 
+ores = {}
+ores[0] = "iron-ore"
+ores[1] = "copper-ore"
+ores[2] = "coal"
+ores[3] = "stone"
+ores[2] = "uranium=ore"
+function getAllowedEntitys(force)
+  local player_entity = {}
+  for key, value in pairs(ores) do
+    if(global.recipes[value] == force.name) then 
+      player_entity[value] = true
+    end 
+  end 
+  return player_entity
+end
+
+function isBuildAllowed(force, entity, surface)
+    local protoype = game.entity_prototypes[entity.name]
+    local r = protoype.mining_drill_radius
+    local box = {{entity.position.x - r, entity.position.y - r}, {entity.position.x + r, entity.position.y + r}}
+    local entites = surface.find_entities_filtered{area = box, type="resource"}
+
+    local allowedEntitys = getAllowedEntitys(force)
+    local reject = false
+    for key, value in pairs(entites) do
+      if allowedEntitys[value.name] ~= true then
+        reject = true
+        break
+      end
+    end 
+    return reject
+end
+
+function on_built_entity(event)
+  --local name = event.created_entity.name
+
+  local entity = event.created_entity
+  local player = game.players[event.player_index]
+  if entity.name == "burner-mining-drill" then
+
+    if isBuildAllowed(player.force, entity, player.surface) then
+      game.print("destroyed")
+      player.insert{name="burner-mining-drill"}
+      entity.destroy()
+    end
+  elseif(event.created_entity.name == "electric-mining-drill") then
+    if isBuildAllowed(player.force, entity, player.surface) then
+      player.insert{name="electric-mining-drill"}
+      game.print("destroyed")
+      entity.destroy()
+    end
+  end
+
+end
+
+function on_robot_build_entity(event)
+  local entity = event.created_entity
+  local robot = event.robot
+  if entity.name == "burner-mining-drill" then
+
+    if isBuildAllowed(robot.force, entity, robot.surface) then
+      game.print("destroyed")
+      --entity.destroy()
+    end
+  elseif(event.created_entity.name == "electric-mining-drill") then
+    if isBuildAllowed(robot.force, entity, robot.surface) then
+      game.print("destroyed")
+      --entity.destroy()
+    end
+  end
+end
+
 function on_init() 
 	extend_data()
 
@@ -368,3 +440,5 @@ script.on_init( on_init )
 script.on_event( defines.events.on_gui_click, on_gui_click )
 script.on_event( defines.events.on_player_created, on_player_create )
 script.on_event( defines.events.on_research_finished, on_research_finished )
+script.on_event( defines.events.on_built_entity, on_built_entity )
+script.on_event( defines.events.on_robot_built_entity, on_robot_build_entity )
