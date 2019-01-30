@@ -5,12 +5,12 @@ function create_gui(player)
 	player.gui.center.add{ type="frame", name="container",	direction="horizontal" }
 	player.gui.center.container.add{ type="table", name="table", direction="horizontal", column_count=3, draw_vertical_lines = true }
 	
-	create_gui_list(player.gui.center.container.table, global.recipes, "Team 1", false, global.team_names[1], player, 220);
-	create_gui_list(player.gui.center.container.table, global.recipes, "Assign", true, "none", player, 245);
-	create_gui_list(player.gui.center.container.table, global.recipes, "Team 2", false, global.team_names[2], player, 220);
+	create_gui_list(player.gui.center.container.table, global.recipes, "Team 1", false, global.team_names[1], player, 5, 245);
+	create_gui_list(player.gui.center.container.table, global.recipes, "Assign", true, "none", player, 2, 125);
+	create_gui_list(player.gui.center.container.table, global.recipes, "Team 2", false, global.team_names[2], player, 5, 245);
 end
 
-function create_gui_list(element, recipes, caption, is_button, filter_name, player, width)
+function create_gui_list(element, recipes, caption, is_button, filter_name, player, column_count, width)
 	local outer = element.add{ type="table", name="table"..caption, direction="vertical", column_count=1}
 	outer.style.align = "center"
 	outer.style.left_padding = 8
@@ -33,7 +33,7 @@ function create_gui_list(element, recipes, caption, is_button, filter_name, play
 	end
 	
 	local scrollpane = outer.add{ type="scroll-pane", name="scrollpane"..caption, vertical_scroll_policy="always"}
-	local inner = scrollpane.add{ type="table", name="table"..caption.."4", direction="vertical", column_count=5 }
+	local inner = scrollpane.add{ type="table", name="table"..caption.."4", direction="vertical", column_count=column_count }
 	
 	for key, value in pairs(global.recipes) do
 		if(value == filter_name or value == "all") then
@@ -44,11 +44,12 @@ function create_gui_list(element, recipes, caption, is_button, filter_name, play
 						inner.add{ type="sprite-button", name=key, sprite=path}
 					end
 				else
-					local sprite = inner.add{ type="sprite", name=key, sprite=path}
-					if(global.researched_recipes[get_other_force_name(filter_name)][key] == nil) then
-						--sprite.style.selection_background_color = {r = 1, a = 0.5}
-						--sprite.style = "tutorial_icon_image"
-						--game.players[1].print(key)
+					--inner.add{ type="sprite-button", name=key, sprite=path, ignored_by_interaction = true, style = "red-background-image-style"}
+					local button = inner.add{ type="sprite-button", name=key, sprite=path, ignored_by_interaction = true}
+					if(global.researched_recipes[filter_name][key] == nil) then
+						button.style = "red-background-image-style"
+					else
+						button.style = "transparent-background-image-style"
 					end
 				end
 			end
@@ -157,16 +158,19 @@ function get_other_force_name(name)
 end
 
 function assign_technologies(name, player)
+	local other_force_name = get_other_force_name(player.force.name);
+	local other_force = game.forces[other_force_name]
+
 	global.recipes[name] = player.force.name
+	global.researched_recipes[player.force.name][name] = true; -- kinda hacky
+	
 	if(player.force.recipes[name] ~= nil) then
 		player.force.recipes[name].enabled = true
 	end
 
-	local other_force_name = get_other_force_name(player.force.name);
-	local other_force = game.forces[other_force_name]
-
 	if(name == "iron-ore") then
 		global.recipes["copper-ore"] = other_force_name
+		global.researched_recipes[other_force_name]["copper-ore"] = true;
 		add_to(other_force, "iron-plate", true)
 		add_to(player.force, "copper-plate", true)
 		add_to(player.force, "iron-gear-wheel", true)
@@ -177,7 +181,9 @@ function assign_technologies(name, player)
 		add_to(player.force, "boiler", true)
 		add_to(other_force, "steam-engine", true)
 		global.recipes["coal"] = other_force_name
+		global.researched_recipes[other_force_name]["coal"] = true;
 		global.recipes["water"] = player.force.name
+		global.researched_recipes[player.force.name]["water"] = true;
 		add_to(other_force, "offshore-pump", true)
 	elseif(name == "uranium-ore") then
 
@@ -393,8 +399,6 @@ function on_robot_build_entity(event)
 end
 
 function on_init() 
-	extend_data()
-
 	global.recipes = {}
 	global.researched_recipes = {}
 	
@@ -430,10 +434,6 @@ function on_init()
 
 	-- disable everything for player force
 	--game.forces["player"].disable_all_prototypes();
-end
-
-function extend_data()
-	--table.insert(data.raw)
 end
 
 script.on_init( on_init )
