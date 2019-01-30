@@ -45,9 +45,9 @@ function create_gui_list(element, recipes, caption, is_button, filter_name, play
 					end
 				else
 					local sprite = inner.add{ type="sprite", name=key, sprite=path}
-					if(game.forces[filter_name] ~= nil and game.forces[filter_name].recipes[key].prototype == false) then
-						sprite.style.color = {r = 1, a = 0.5}
-					end
+					--if(game.forces[filter_name] ~= nil and game.forces[filter_name].recipes[key].prototype == false) then
+					--	sprite.style.color = {r = 1, a = 0.5}
+					--end
 				end
 			end
 		end
