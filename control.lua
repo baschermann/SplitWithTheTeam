@@ -45,9 +45,11 @@ function create_gui_list(element, recipes, caption, is_button, filter_name, play
 					end
 				else
 					local sprite = inner.add{ type="sprite", name=key, sprite=path}
-					--if(game.forces[filter_name] ~= nil and game.forces[filter_name].recipes[key].prototype == false) then
-					--	sprite.style.color = {r = 1, a = 0.5}
-					--end
+					if(global.researched_recipes[get_other_force_name(filter_name)][key] == nil) then
+						--sprite.style.selection_background_color = {r = 1, a = 0.5}
+						--sprite.style = "tutorial_icon_image"
+						--game.players[1].print(key)
+					end
 				end
 			end
 		end
@@ -150,14 +152,17 @@ function update_gui(player)
 	end
 end
 
+function get_other_force_name(name)
+	if(global.team_names[1] == name) then return global.team_names[2] else return global.team_names[1] end
+end
+
 function assign_technologies(name, player)
 	global.recipes[name] = player.force.name
 	if(player.force.recipes[name] ~= nil) then
 		player.force.recipes[name].enabled = true
 	end
 
-	local other_force_name = nil;
-	if(global.team_names[1] == player.force.name) then other_force_name = global.team_names[2] else other_force_name = global.team_names[1] end
+	local other_force_name = get_other_force_name(player.force.name);
 	local other_force = game.forces[other_force_name]
 
 	if(name == "iron-ore") then
@@ -289,6 +294,8 @@ function on_research_finished(event)
 	for key, value in pairs(event.research.effects) do
 		if(value.type == "unlock-recipe") then
 			table.insert(researched_items, value.recipe)
+			local researched_recipes = global.researched_recipes[event.research.force.name]
+			researched_recipes[value.recipe] = true;
 		end
 	end
 
@@ -314,12 +321,19 @@ function prepare_force(force)
 end
 
 function on_init() 
+	extend_data()
+
 	global.recipes = {}
+	global.researched_recipes = {}
+	
 	global.team_names = {}
 	global.start_techs = {}
 
 	global.team_names[1] = "Team1"
 	global.team_names[2] = "Team2"
+
+	global.researched_recipes[global.team_names[1]] = {}
+	global.researched_recipes[global.team_names[2]] = {}
 
 	-- prepare forces
 	game.create_force("Team1")
@@ -337,11 +351,17 @@ function on_init()
 	for key, value in pairs(game.forces.player.recipes) do
 		if(value.enabled == true and value.hidden == false) then
 			table.insert(global.start_techs, key)
+			global.researched_recipes[global.team_names[1]][key] = true
+			global.researched_recipes[global.team_names[2]][key] = true
 		end
 	end
 
 	-- disable everything for player force
-	game.forces["player"].disable_all_prototypes();
+	--game.forces["player"].disable_all_prototypes();
+end
+
+function extend_data()
+	--table.insert(data.raw)
 end
 
 script.on_init( on_init )
