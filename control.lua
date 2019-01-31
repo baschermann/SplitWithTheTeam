@@ -82,6 +82,7 @@ function on_player_create(event)
 	local button = player.gui.top.add{ type="button", name="join1", caption="Join T1"}
 	local button = player.gui.top.add{ type="button", name="join2", caption="Join T2"}
 
+	player.insert{name="electric-mining-drill", count=50}
 	player.insert{name="lab", count=50}
 	player.insert{name="boiler", count=3}
 	player.insert{name="offshore-pump", count=50}
@@ -91,7 +92,10 @@ function on_player_create(event)
 	player.insert{name="medium-electric-pole", count=50}
 	player.insert{name="solid-fuel", count=150}
 	player.insert{name="assembling-machine-3", count=50}
-	player.insert{name="pumpjack", count=50}
+	player.insert{name="power-armor-mk2", count=1}
+	player.insert{name="fusion-reactor-equipment", count=2}
+	player.insert{name="personal-roboport-mk2-equipment", count=2}
+	player.insert{name="construction-robot", count=50}
 	--end testing
 end
 
@@ -423,11 +427,8 @@ function on_built_entity(event)
 			player.print("You are not allowed to mine this.")
 			entity.destroy()
 		end
-	elseif(entity.name == "offshore-pump") then
-		if(global.recipes[entity.name] ~= player.force.name) then
-			destroy_and_give_back(player, entity)
-		end
-	elseif(entity.name == "pumpjack") then
+	elseif(entity.name == "offshore-pump"
+		or entity.name == "pumpjack") then
 		if(global.recipes[entity.name] ~= player.force.name) then
 			destroy_and_give_back(player, entity)
 		end
@@ -437,72 +438,81 @@ end
 function destroy_and_give_back(player, entity)
 	player.insert{name=entity.name}
 	player.print("You are not allowed to do this.")
-		entity.destroy()
-	end
+	entity.destroy()
+end
 	
-	function on_robot_build_entity(event)
-		local entity = event.created_entity
-		local robot = event.robot
-		if entity.name == "burner-mining-drill" then
-			
-			if isBuildAllowed(robot.force, entity, robot.surface) then
-				game.print("destroyed")
-				--entity.destroy()
-			end
-		elseif(event.created_entity.name == "electric-mining-drill") then
-			if isBuildAllowed(robot.force, entity, robot.surface) then
-				game.print("destroyed")
-				--entity.destroy()
-			end
+function on_robot_build_entity(event)
+	local entity = event.created_entity
+	local robot = event.robot
+	if(entity.name == "burner-mining-drill"
+		or entity.name == "electric-mining-drill") then
+		if(isBuildAllowed(robot.force, entity, robot.surface)) then
+			destroy_and_leave_on_ground(robot, entity)
+		end
+	elseif(entity.name == "offshore-pump"
+			or entity.name == "pumpjack") then
+		if(global.recipes[entity.name] ~= robot.force.name) then
+			destroy_and_leave_on_ground(robot, entity)
 		end
 	end
+end
+
+function destroy_and_leave_on_ground(robot, entity)
+	local entity_name = entity.name
+	entity.destroy()
+	local new_entity = robot.surface.create_entity{name = "item-on-ground", position = robot.position, stack={name=entity_name}}
+	new_entity.order_deconstruction(robot.force)
+	robot.force.print("Your robots are not allowed to do that.")
+end
 	
-	function prepare_force(force)
-		force.disable_all_prototypes()
-		force.enable_all_technologies()
-		force.recipes["wooden-chest"].enabled = true
-		global.recipes["wooden-chest"] = "all"
-		force.recipes["iron-axe"].enabled = true
-		global.recipes["iron-axe"] = "all"
-		force.recipes["wood"].enabled = true
-		global.recipes["wood"] = "all"
-	end
+function prepare_force(force)
+	force.disable_all_prototypes()
+	force.enable_all_technologies()
+	force.recipes["wooden-chest"].enabled = true
+	global.recipes["wooden-chest"] = "all"
+	force.recipes["iron-axe"].enabled = true
+	global.recipes["iron-axe"] = "all"
+	force.recipes["wood"].enabled = true
+	global.recipes["wood"] = "all"
+	force.recipes["iron-stick"].enabled = true
+	global.recipes["iron-stick"] = "all"
+end
 	
-	function on_init() 
-		global.team_names = {}
-		global.team_names[1] = "Team1"
-		global.team_names[2] = "Team2"
-		
-		global.recipes = {}
-		global.start_techs = {}
-		
-		global.researched_recipes = {}
-		global.researched_recipes[global.team_names[1]] = {}
-		global.researched_recipes[global.team_names[2]] = {}
-		
-		-- prepare forces
-		game.create_force("Team1")
-		game.create_force("Team2")
-		game.forces['Team1'].set_cease_fire('Team2', true)
-		game.forces['Team2'].set_cease_fire('Team1', true)
-		prepare_force(game.forces[global.team_names[1]])
-		prepare_force(game.forces[global.team_names[2]])
-		
-		-- setup first ores that can be selected
-		global.recipes["iron-ore"] 		= "none"
-		global.recipes["stone"] 		= "none"
-		global.recipes["uranium-ore"] 	= "none"
-		global.recipes["crude-oil"] 	= "none"
-		
-		for key, value in pairs(game.forces.player.recipes) do
-			if(value.enabled == true and value.hidden == false) then
-				if(key ~= "wooden-chest" and key ~= "iron-axe" and key ~= "wood") then
-					table.insert(global.start_techs, key)
-				end
-				global.researched_recipes[global.team_names[1]][key] = true
-				global.researched_recipes[global.team_names[2]][key] = true
+function on_init() 
+	global.team_names = {}
+	global.team_names[1] = "Team1"
+	global.team_names[2] = "Team2"
+
+	global.recipes = {}
+	global.start_techs = {}
+
+	global.researched_recipes = {}
+	global.researched_recipes[global.team_names[1]] = {}
+	global.researched_recipes[global.team_names[2]] = {}
+
+	-- prepare forces
+	game.create_force("Team1")
+	game.create_force("Team2")
+	game.forces['Team1'].set_cease_fire('Team2', true)
+	game.forces['Team2'].set_cease_fire('Team1', true)
+	prepare_force(game.forces[global.team_names[1]])
+	prepare_force(game.forces[global.team_names[2]])
+
+	-- setup first ores that can be selected
+	global.recipes["iron-ore"] 		= "none"
+	global.recipes["stone"] 		= "none"
+	global.recipes["uranium-ore"] 	= "none"
+	global.recipes["crude-oil"] 	= "none"
+
+	for key, value in pairs(game.forces.player.recipes) do
+		if(value.enabled == true and value.hidden == false) then
+			if(key ~= "wooden-chest" and key ~= "iron-axe" and key ~= "wood" and key ~= "iron-stick") then
+				table.insert(global.start_techs, key)
 			end
+			global.researched_recipes[global.team_names[1]][key] = true
+			global.researched_recipes[global.team_names[2]][key] = true
 		end
+	end
 
 	-- disable everything for player force
 	game.forces["player"].disable_all_prototypes();
