@@ -84,13 +84,14 @@ function on_player_create(event)
 
 	player.insert{name="lab", count=50}
 	player.insert{name="boiler", count=3}
-	player.insert{name="offshore-pump", count=1}
+	player.insert{name="offshore-pump", count=50}
 	player.insert{name="steam-engine", count=6}
 	player.insert{name="science-pack-1", count=600}
 	player.insert{name="science-pack-2", count=600}
 	player.insert{name="medium-electric-pole", count=50}
 	player.insert{name="solid-fuel", count=150}
 	player.insert{name="assembling-machine-3", count=50}
+	player.insert{name="pumpjack", count=50}
 	--end testing
 end
 
@@ -125,9 +126,11 @@ function on_gui_click(event)
 	else
 		if(event.element.name == "button_join_Team1") then
 			join_team(player, global.team_names[1])
+			game.print("Player "..player.name.." joined Team 1")
 			update_gui(player)
 		elseif(event.element.name == "button_join_Team2") then
 			join_team(player, global.team_names[2])
+			game.print("Player "..player.name.." joined Team 2")
 			update_gui(player)
 		end
 	end
@@ -202,11 +205,13 @@ function assign_technologies(name, player)
 		if(value == "none") then free_technologies = free_technologies + 1 end
 	end
 
-
-	if(free_technologies <= 0) then assign_techs(player.force, other_force, global.start_techs, true, 0, player.force) end
+	--if(free_technologies <= 0) then assign_techs(player.force, other_force, global.start_techs, true, 0, player.force) end
+	if(free_technologies <= 0) then assign_techs(global.start_techs, true, 0, player.force) end
 end
 
-function assign_techs(force1, force2, recipes_to_assign, enable, number_of_repeats, force_of_researcher)
+function assign_techs(recipes_to_assign, enable, number_of_repeats, force_of_researcher)
+	local force1 = game.forces[global.team_names[1]]
+	local force2 = game.forces[global.team_names[2]]
 
 	-- Add technologies that have not been set manually that are usually available from the start
 	for key, value in pairs(recipes_to_assign) do
@@ -259,9 +264,10 @@ function assign_techs(force1, force2, recipes_to_assign, enable, number_of_repea
 		local products = {}
 		if(game.recipe_prototypes[item_name] ~= nil) then
 			for key, value in pairs(game.recipe_prototypes[item_name].products) do
-				--game.players[1].print(value.name)
 				global.researched_recipes[force_of_researcher.name][value.name] = true
-				table.insert(products, value.name)
+				if(global.recipes[value.name] == nil) then
+					table.insert(products, value.name)
+				end
 			end
 		end
 
@@ -319,7 +325,7 @@ function assign_techs(force1, force2, recipes_to_assign, enable, number_of_repea
 	if(number_of_repeats < 7) then
 		if(repeat_assigning) then
 			--game.players[1].print("--- repeat")
-			assign_techs(force1, force2, repeat_techs, enable, number_of_repeats + 1, force_of_researcher)
+			assign_techs(repeat_techs, enable, number_of_repeats + 1, force_of_researcher)
 		end
 	else
 		--game.players[1].print("Repeats reached maximum limit")
@@ -355,7 +361,7 @@ function on_research_finished(event)
 	end
 
 	-- assign them to the forces but do not enable them
-	assign_techs(game.forces[global.team_names[1]], game.forces[global.team_names[2]], researched_items, false, 0, event.research.force)
+	assign_techs(researched_items, false, 0, event.research.force)
 
 	-- disable that are not our own since researching enables them automatically
 	for key, value in pairs(researched_items) do
@@ -365,17 +371,6 @@ function on_research_finished(event)
 	end
 
 	update_gui_for_all()
-end
-
-function prepare_force(force)
-	force.disable_all_prototypes()
-	force.enable_all_technologies()
-	force.recipes["wooden-chest"].enabled = true
-	global.recipes["wooden-chest"] = "all"
-	force.recipes["iron-axe"].enabled = true
-	global.recipes["iron-axe"] = "all"
-	force.recipes["wood"].enabled = true
-	global.recipes["wood"] = "all"
 end
 
 function on_research_started(event)
@@ -403,7 +398,7 @@ function isBuildAllowed(force, entity, surface)
 	local r = protoype.mining_drill_radius
 	local box = {{entity.position.x - r, entity.position.y - r}, {entity.position.x + r, entity.position.y + r}}
 	local entites = surface.find_entities_filtered{area = box, type="resource"}
-
+	
     local allowedEntitys = getAllowedEntitys(force)
     for key, value in pairs(entites) do
 		if allowedEntitys[value.name] ~= true then
@@ -416,71 +411,98 @@ end
 function on_built_entity(event)
 	local entity = event.created_entity
 	local player = game.players[event.player_index]
-	if entity.name == "burner-mining-drill" then
+	if(entity.name == "burner-mining-drill") then
 		if isBuildAllowed(player.force, entity, player.surface) then
 			player.print("You are not allowed to mine this.")
 			player.insert{name="burner-mining-drill"}
 			entity.destroy()
 		end
-	elseif(event.created_entity.name == "electric-mining-drill") then
+	elseif(entity.name == "electric-mining-drill") then
 		if isBuildAllowed(player.force, entity, player.surface) then
 			player.insert{name="electric-mining-drill"}
 			player.print("You are not allowed to mine this.")
 			entity.destroy()
 		end
-	end
-end
-
-function on_robot_build_entity(event)
-	local entity = event.created_entity
-	local robot = event.robot
-	if entity.name == "burner-mining-drill" then
-
-		if isBuildAllowed(robot.force, entity, robot.surface) then
-			game.print("destroyed")
-			--entity.destroy()
+	elseif(entity.name == "offshore-pump") then
+		if(global.recipes[entity.name] ~= player.force.name) then
+			destroy_and_give_back(player, entity)
 		end
-	elseif(event.created_entity.name == "electric-mining-drill") then
-		if isBuildAllowed(robot.force, entity, robot.surface) then
-			game.print("destroyed")
-			--entity.destroy()
+	elseif(entity.name == "pumpjack") then
+		if(global.recipes[entity.name] ~= player.force.name) then
+			destroy_and_give_back(player, entity)
 		end
 	end
 end
 
-function on_init() 
-	global.team_names = {}
-	global.team_names[1] = "Team1"
-	global.team_names[2] = "Team2"
-
-	global.recipes = {}
-	global.start_techs = {}
-
-	global.researched_recipes = {}
-	global.researched_recipes[global.team_names[1]] = {}
-	global.researched_recipes[global.team_names[2]] = {}
-
-	-- prepare forces
-	game.create_force("Team1")
-	game.create_force("Team2")
-	game.forces['Team1'].set_cease_fire('Team2', true)
-	game.forces['Team2'].set_cease_fire('Team1', true)
-	prepare_force(game.forces[global.team_names[1]])
-	prepare_force(game.forces[global.team_names[2]])
+function destroy_and_give_back(player, entity)
+	player.insert{name=entity.name}
+	player.print("You are not allowed to do this.")
+		entity.destroy()
+	end
 	
-	-- setup first ores that can be selected
-	global.recipes["iron-ore"] 		= "none"
-	global.recipes["stone"] 		= "none"
-	global.recipes["uranium-ore"] 	= "none"
-	global.recipes["crude-oil"] 	= "none"
-
-	for key, value in pairs(game.forces.player.recipes) do
-		if(value.enabled == true and value.hidden == false) then
-			table.insert(global.start_techs, key)
-			global.researched_recipes[global.team_names[1]][key] = true
-			global.researched_recipes[global.team_names[2]][key] = true
+	function on_robot_build_entity(event)
+		local entity = event.created_entity
+		local robot = event.robot
+		if entity.name == "burner-mining-drill" then
+			
+			if isBuildAllowed(robot.force, entity, robot.surface) then
+				game.print("destroyed")
+				--entity.destroy()
+			end
+		elseif(event.created_entity.name == "electric-mining-drill") then
+			if isBuildAllowed(robot.force, entity, robot.surface) then
+				game.print("destroyed")
+				--entity.destroy()
+			end
 		end
 	end
+	
+	function prepare_force(force)
+		force.disable_all_prototypes()
+		force.enable_all_technologies()
+		force.recipes["wooden-chest"].enabled = true
+		global.recipes["wooden-chest"] = "all"
+		force.recipes["iron-axe"].enabled = true
+		global.recipes["iron-axe"] = "all"
+		force.recipes["wood"].enabled = true
+		global.recipes["wood"] = "all"
+	end
+	
+	function on_init() 
+		global.team_names = {}
+		global.team_names[1] = "Team1"
+		global.team_names[2] = "Team2"
+		
+		global.recipes = {}
+		global.start_techs = {}
+		
+		global.researched_recipes = {}
+		global.researched_recipes[global.team_names[1]] = {}
+		global.researched_recipes[global.team_names[2]] = {}
+		
+		-- prepare forces
+		game.create_force("Team1")
+		game.create_force("Team2")
+		game.forces['Team1'].set_cease_fire('Team2', true)
+		game.forces['Team2'].set_cease_fire('Team1', true)
+		prepare_force(game.forces[global.team_names[1]])
+		prepare_force(game.forces[global.team_names[2]])
+		
+		-- setup first ores that can be selected
+		global.recipes["iron-ore"] 		= "none"
+		global.recipes["stone"] 		= "none"
+		global.recipes["uranium-ore"] 	= "none"
+		global.recipes["crude-oil"] 	= "none"
+		
+		for key, value in pairs(game.forces.player.recipes) do
+			if(value.enabled == true and value.hidden == false) then
+				if(key ~= "wooden-chest" and key ~= "iron-axe" and key ~= "wood") then
+					table.insert(global.start_techs, key)
+				end
+				global.researched_recipes[global.team_names[1]][key] = true
+				global.researched_recipes[global.team_names[2]][key] = true
+			end
+		end
 
 	-- disable everything for player force
 	game.forces["player"].disable_all_prototypes();
