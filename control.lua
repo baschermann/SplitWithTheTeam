@@ -79,23 +79,23 @@ function on_player_create(event)
 	toggle_gui(player)
 
 	--for testing
-	local button = player.gui.top.add{ type="button", name="join1", caption="Join T1"}
-	local button = player.gui.top.add{ type="button", name="join2", caption="Join T2"}
+	--local button = player.gui.top.add{ type="button", name="join1", caption="Join T1"}
+	--local button = player.gui.top.add{ type="button", name="join2", caption="Join T2"}
 
-	player.insert{name="electric-mining-drill", count=50}
-	player.insert{name="lab", count=50}
-	player.insert{name="boiler", count=3}
-	player.insert{name="offshore-pump", count=50}
-	player.insert{name="steam-engine", count=6}
-	player.insert{name="science-pack-1", count=600}
-	player.insert{name="science-pack-2", count=600}
-	player.insert{name="medium-electric-pole", count=50}
-	player.insert{name="solid-fuel", count=150}
-	player.insert{name="assembling-machine-3", count=50}
-	player.insert{name="power-armor-mk2", count=1}
-	player.insert{name="fusion-reactor-equipment", count=2}
-	player.insert{name="personal-roboport-mk2-equipment", count=2}
-	player.insert{name="construction-robot", count=50}
+	--player.insert{name="electric-mining-drill", count=50}
+	--player.insert{name="lab", count=50}
+	--player.insert{name="boiler", count=3}
+	--player.insert{name="offshore-pump", count=50}
+	--player.insert{name="steam-engine", count=6}
+	--player.insert{name="science-pack-1", count=600}
+	--player.insert{name="science-pack-2", count=600}
+	--player.insert{name="medium-electric-pole", count=50}
+	--player.insert{name="solid-fuel", count=150}
+	--player.insert{name="assembling-machine-3", count=50}
+	--player.insert{name="power-armor-mk2", count=1}
+	--player.insert{name="fusion-reactor-equipment", count=2}
+	--player.insert{name="personal-roboport-mk2-equipment", count=2}
+	--player.insert{name="construction-robot", count=50}
 	--end testing
 end
 
@@ -103,19 +103,15 @@ function on_gui_click(event)
 	local player = game.players[event.player_index]
 
 	-- for Testing
-	if(event.element.name == "join1") then
-		player.force = game.forces[global.team_names[1]]
-		player.print("Joined T1")
-	end
-
-	if(event.element.name == "join2") then
-		player.force = game.forces[global.team_names[2]]
-		player.print("Joined T2")
-	end
-
-	if(event.element.name == "research_now") then
-		
-	end
+	--if(event.element.name == "join1") then
+	--	player.force = game.forces[global.team_names[1]]
+	--	player.print("Joined T1")
+	--end
+--
+	--if(event.element.name == "join2") then
+	--	player.force = game.forces[global.team_names[2]]
+	--	player.print("Joined T2")
+	--end
 	-- end Testing
 	
 	if(event.element.name == "open_split_team_view") then
@@ -522,6 +518,6 @@ script.on_init( on_init )
 script.on_event( defines.events.on_gui_click, on_gui_click )
 script.on_event( defines.events.on_player_created, on_player_create )
 script.on_event( defines.events.on_research_finished, on_research_finished )
-script.on_event( defines.events.on_research_started, on_research_started )
+--script.on_event( defines.events.on_research_started, on_research_started )
 script.on_event( defines.events.on_built_entity, on_built_entity )
 script.on_event( defines.events.on_robot_built_entity, on_robot_build_entity )
