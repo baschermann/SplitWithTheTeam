@@ -79,8 +79,8 @@ function on_player_create(event)
 	toggle_gui(player)
 
 	--for testing
-	--local button = player.gui.top.add{ type="button", name="join1", caption="Join T1"}
-	--local button = player.gui.top.add{ type="button", name="join2", caption="Join T2"}
+	local button = player.gui.top.add{ type="button", name="join1", caption="Join T1"}
+	local button = player.gui.top.add{ type="button", name="join2", caption="Join T2"}
 
 	--player.insert{name="electric-mining-drill", count=50}
 	--player.insert{name="lab", count=50}
@@ -288,11 +288,11 @@ function assign_techs(recipes_to_assign, enable, number_of_repeats, force_of_res
 				end
 
 				if(f1_nr_of_rec >= f2_nr_of_rec) then
-					--game.players[1].print("Nr. of recipes:: "..tostring(f1_nr_of_rec).." (T1) to "..tostring(f2_nr_of_rec).." (T2) for "..item_name.." giving Team 2")
+					game.print("Nr. of recipes:: "..tostring(f1_nr_of_rec).." (T1) to "..tostring(f2_nr_of_rec).." (T2) for "..item_name.." giving Team 2")
 					add_to(force2, item_name, enable)
 					add_products_to(force2, products)
 				else
-					--game.players[1].print("Nr. of recipes:: "..tostring(f1_nr_of_rec).." (T1) to "..tostring(f2_nr_of_rec).." (T2) for "..item_name.." giving Team 2")
+					game.print("Nr. of recipes:: "..tostring(f1_nr_of_rec).." (T1) to "..tostring(f2_nr_of_rec).." (T2) for "..item_name.." giving Team 1")
 					add_to(force1, item_name, enable)
 					for key, value in pairs(products) do
 						add_to(force1, value, enable)
@@ -301,14 +301,14 @@ function assign_techs(recipes_to_assign, enable, number_of_repeats, force_of_res
 				end
 			elseif(f1_nr_of_ingr > f2_nr_of_ingr) then
 				-- if team 1 has more ingredients for this recipe, give it to team 2
-				--game.players[1].print("Nr. of ingredients:: "..tostring(f1_nr_of_ingr).." (T1) to "..tostring(f2_nr_of_ingr).." (T2) for "..item_name.." giving Team 2")
+				game.print("Nr. of ingredients:: "..tostring(f1_nr_of_ingr).." (T1) to "..tostring(f2_nr_of_ingr).." (T2) for "..item_name.." giving Team 2")
 				add_to(force2, item_name, enable)
 				for key, value in pairs(products) do
 					add_to(force2, value, enable)
 					add_products_to(force2, products)
 				end
 			else
-				--game.players[1].print("Nr. of ingredients:: "..tostring(f1_nr_of_ingr).." (T1) to "..tostring(f2_nr_of_ingr).." (T2) for "..item_name.." giving Team 1")
+				game.print("Nr. of ingredients:: "..tostring(f1_nr_of_ingr).." (T1) to "..tostring(f2_nr_of_ingr).." (T2) for "..item_name.." giving Team 1")
 				add_to(force1, item_name, enable)
 				for key, value in pairs(products) do
 					add_to(force1, value, enable)
@@ -335,18 +335,28 @@ end
 function add_to(force, name, enable)
 	global.recipes[name] = force.name
 	if(enable) then	force.recipes[name].enabled = true end
+
+	if(enable) then
+		game.print("Assign "..name.." to "..force.name.. " and enable")
+	else
+		game.print("Assign "..name.." to "..force.name.. " (not enabling)")
+	end
 end
 
 function add_products_to(force, products, researcher_force)
 	for key, value in pairs(products) do
 		if(global.recipes[value] == nil) then
 			global.recipes[value] = force.name
+			game.print("Assign "..value.." to "..force.name)
 		end
 	end
 end
 
 function on_research_finished(event)
 	local researched_items = {}
+
+	game.print("---------------------------")
+	game.print(event.research.force.name.." has researched "..event.research.name)
 
 	-- get all techs that are researched
 	for key, value in pairs(event.research.effects) do
@@ -367,6 +377,7 @@ function on_research_finished(event)
 	for key, value in pairs(researched_items) do
 		if(global.recipes[value] ~= event.research.force.name) then
 			game.forces[event.research.force.name].recipes[value].enabled = false
+			game.print("Disabling "..value.." for "..event.research.force.name)
 		end
 	end
 
