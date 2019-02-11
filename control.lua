@@ -106,8 +106,8 @@ function on_player_create(event)
 	toggle_gui(player)
 
 	--for testing
-	local button = player.gui.top.add {type = "button", name = "join1", caption = "Join T1"}
-	local button = player.gui.top.add {type = "button", name = "join2", caption = "Join T2"}
+	--local button = player.gui.top.add {type = "button", name = "join1", caption = "Join T1"}
+	--local button = player.gui.top.add {type = "button", name = "join2", caption = "Join T2"}
 
 	--player.insert{name="electric-mining-drill", count=50}
 	--player.insert{name="lab", count=50}
@@ -375,9 +375,9 @@ function add_to(force, name, enable)
 	end
 
 	if (enable) then
-		game.print("Assign " .. name .. " to " .. force.name .. " and enable")
+		--game.print("Assign " .. name .. " to " .. force.name .. " and enable")
 	else
-		game.print("Assign " .. name .. " to " .. force.name .. " (not enabling)")
+		--game.print("Assign " .. name .. " to " .. force.name .. " (not enabling)")
 	end
 end
 
@@ -385,7 +385,7 @@ function add_products_to(force, products, researcher_force)
 	for key, value in pairs(products) do
 		if (global.recipes[value] == nil) then
 			global.recipes[value] = force.name
-			game.print("Assign " .. value .. " to " .. force.name)
+			--game.print("Assign " .. value .. " to " .. force.name)
 		end
 	end
 end
@@ -393,8 +393,8 @@ end
 function on_research_finished(event)
 	local researched_items = {}
 
-	game.print("---------------------------")
-	game.print(event.research.force.name .. " has researched " .. event.research.name)
+	--game.print("---------------------------")
+	--game.print(event.research.force.name .. " has researched " .. event.research.name)
 
 	-- get all techs that are researched
 	for key, value in pairs(event.research.effects) do
@@ -418,7 +418,7 @@ function on_research_finished(event)
 	for key, value in pairs(researched_items) do
 		if (global.recipes[value] ~= event.research.force.name) then
 			game.forces[event.research.force.name].recipes[value].enabled = false
-			game.print("Disabling " .. value .. " for " .. event.research.force.name)
+			--game.print("Disabling " .. value .. " for " .. event.research.force.name)
 		end
 	end
 
@@ -432,11 +432,13 @@ function check_for_invalidity()
 			if (global.researched_recipes[team][name] ~= nil) then
 
 				if (game.forces[team].recipes[name] ~= nil and game.forces[team].recipes[name].enabled == false) then
-					game.print("!!!! -> " .. team .. " has researched and assigned recipe " .. name .. " but it is not enabled")
+					--game.print("!!!! -> " .. team .. " has researched and assigned recipe " .. name .. " but it is not enabled")
+					game.forces[team].recipes[name].enabled = true
 				end
 
 				if (game.forces[team].technologies[name] ~= nil and game.forces[team].technologies[name].enabled == false) then
-					game.print("!!!! -> " .. team .. " has researched and assigned technologies " .. name .. " but it is not enabled")
+					--game.print("!!!! -> " .. team .. " has researched and assigned technologies " .. name .. " but it is not enabled")
+					game.forces[team].technologies[name].enabled = true
 				end
 			end
 		end
@@ -589,4 +591,4 @@ script.on_event(defines.events.on_research_finished, on_research_finished)
 script.on_event(defines.events.on_built_entity, on_built_entity)
 script.on_event(defines.events.on_robot_built_entity, on_robot_build_entity)
 
-script.on_event(defines.events.on_research_started, on_research_started)
+--script.on_event(defines.events.on_research_started, on_research_started)
