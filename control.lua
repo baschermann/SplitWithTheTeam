@@ -531,6 +531,7 @@ script.on_init( on_init )
 script.on_event( defines.events.on_gui_click, on_gui_click )
 script.on_event( defines.events.on_player_created, on_player_create )
 script.on_event( defines.events.on_research_finished, on_research_finished )
-script.on_event( defines.events.on_research_started, on_research_started )
 script.on_event( defines.events.on_built_entity, on_built_entity )
 script.on_event( defines.events.on_robot_built_entity, on_robot_build_entity )
+
+--script.on_event( defines.events.on_research_started, on_research_started )
