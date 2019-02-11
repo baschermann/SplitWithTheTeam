@@ -432,12 +432,12 @@ function check_for_invalidity()
 			if (global.researched_recipes[team][name] ~= nil) then
 
 				if (game.forces[team].recipes[name] ~= nil and game.forces[team].recipes[name].enabled == false) then
-					--game.print("!!!! -> " .. team .. " has researched and assigned recipe " .. name .. " but it is not enabled")
+					game.print("!!!! -> " .. team .. " has researched and assigned recipe " .. name .. " but it is not enabled. Fixing it.")
 					game.forces[team].recipes[name].enabled = true
 				end
 
 				if (game.forces[team].technologies[name] ~= nil and game.forces[team].technologies[name].enabled == false) then
-					--game.print("!!!! -> " .. team .. " has researched and assigned technologies " .. name .. " but it is not enabled")
+					game.print("!!!! -> " .. team .. " has researched and assigned technologies " .. name .. " but it is not enabled. Fixing it.")
 					game.forces[team].technologies[name].enabled = true
 				end
 			end
